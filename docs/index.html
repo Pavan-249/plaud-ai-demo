@@ -67,10 +67,6 @@
 
       /* Nav badge */
       .demo-badge { font-size: 0.65rem; letter-spacing: 0.1em; background: var(--accent-gold); color: #000; padding: 2px 8px; border-radius: 999px; margin-left: 12px; vertical-align: middle; }
-
-      /* Presentation link */
-      .nav-pres-link { text-decoration: none; color: var(--accent-gold); font-size: 0.8rem; letter-spacing: 0.1em; border: 1px solid var(--border-color); padding: 6px 14px; border-radius: 4px; transition: all 0.2s; }
-      .nav-pres-link:hover { border-color: var(--accent-gold); }
     </style>
   </head>
   <body>
@@ -93,19 +89,18 @@
 
     <!-- Guided Tour -->
     <div id="tourOverlay" class="tour-overlay">
-      <div class="tour-title">Welcome to the Demo</div>
-      <p class="tour-text">Click <strong style="color:var(--accent-gold)">LOAD SAMPLE AUDIO</strong> above to load a real medical consultation recording, then hit <strong style="color:var(--accent-gold)">RUN PIPELINE</strong> to see instant PHI detection and a clinical SOAP note generated in seconds.</p>
+      <div class="tour-title">Getting Started</div>
+      <p class="tour-text">Click <strong style="color:var(--accent-gold)">LOAD SAMPLE AUDIO</strong> to load a real medical consultation recording, then click <strong style="color:var(--accent-gold)">RUN PIPELINE</strong> to see PHI detection and clinical note generation in action.</p>
       <div class="tour-actions">
         <button class="tour-skip" onclick="closeTour()">DISMISS</button>
-        <button class="tour-btn" onclick="closeTour(); document.getElementById('loadSample').click()">TRY IT NOW</button>
+        <button class="tour-btn" onclick="closeTour(); document.getElementById('loadSample').click()">LOAD SAMPLE</button>
       </div>
     </div>
 
     <!-- Top Navigation Bar -->
     <nav class="top-nav">
-      <div class="logo">PLAUD AI <span class="demo-badge">DEMO</span></div>
-      <div class="nav-links" style="display:flex;align-items:center;gap:24px;">
-        <a class="nav-pres-link" href="presentation.html" target="_blank">VIEW PRESENTATION</a>
+      <div class="logo">PLAUD AI <span class="demo-badge">CONCEPT</span></div>
+      <div class="nav-links">
         <a href="#">PHI-SAFE PIPELINE</a>
       </div>
     </nav>
@@ -114,10 +109,10 @@
       <header class="hero">
         <div class="hero-content">
           <h1>CLINICAL DATA <br><span class="accent-text">SANITIZATION</span></h1>
-          <p class="subtitle">Real-time PII/PHI detection in medical transcripts. No data leaves the device.</p>
+          <p class="subtitle">Real-time PII/PHI identification and redaction in medical transcripts. All processing runs on-device. No patient data leaves the network.</p>
         </div>
-        <div class="hero-instructions" data-tooltip="1. Click 'LOAD SAMPLE AUDIO' to load a real consultation recording.&#10;2. Click 'RUN PIPELINE' to process.&#10;3. See PHI flagged, redacted, and a SOAP note generated.">
-          <span>ℹ️</span>&nbsp; HOW TO USE
+        <div class="hero-instructions" data-tooltip="Step 1: Click LOAD SAMPLE AUDIO to load a real consultation recording.&#10;Step 2: Click RUN PIPELINE to process the audio.&#10;Step 3: Review the flagged entities, redacted transcript, and generated SOAP note.">
+          HOW TO USE
         </div>
       </header>
 
@@ -132,7 +127,7 @@
           </div>
         </div>
         <div class="actions">
-          <button id="loadSample" class="btn-outline pulse-btn" data-tooltip="✨ Click to load a real medical consultation recording with PHI!">LOAD SAMPLE AUDIO</button>
+          <button id="loadSample" class="btn-outline pulse-btn" data-tooltip="Load a real de-identified medical consultation recording to see the pipeline in action.">LOAD SAMPLE AUDIO</button>
           <button id="loadTone" class="btn-outline">LOAD TEST TONE</button>
         </div>
       </section>
@@ -143,8 +138,8 @@
         <div class="col-left">
           <article class="panel">
             <div class="panel-header">
-              <h3>TRANSCRIPT INPUT <span class="tooltip-icon" data-tooltip="Paste medical text here. PHI detection activates instantly as you type.">?</span></h3>
-              <p class="panel-desc">Type or paste a transcript. Live detection is active.</p>
+              <h3>TRANSCRIPT INPUT <span class="tooltip-icon" data-tooltip="Paste a medical transcript here. PHI entities are identified in real time as you type, with zero latency.">?</span></h3>
+              <p class="panel-desc">Type or paste a clinical transcript. Live PHI detection is active.</p>
             </div>
             <textarea id="transcriptInput" placeholder="Paste or type a clinical transcript here..."></textarea>
 
@@ -172,28 +167,28 @@
 
           <article class="panel output-panel">
             <div class="panel-header">
-              <h3>LIVE PHI FLAGGING <span class="tooltip-icon" data-tooltip="Highlighted entities: Names, Dates, Phone numbers, SSNs, Medical IDs.">?</span></h3>
+              <h3>LIVE PHI FLAGGING <span class="tooltip-icon" data-tooltip="Identified PHI entities are highlighted inline within the original transcript. Entity type labels appear alongside each detected value.">?</span></h3>
             </div>
             <div id="highlighted" class="content-box highlight"></div>
           </article>
 
           <article class="panel output-panel">
             <div class="panel-header">
-              <h3>REDACTED OUTPUT <span class="tooltip-icon" data-tooltip="This clean version is safe for LLM processing and storage.">?</span></h3>
+              <h3>REDACTED TRANSCRIPT <span class="tooltip-icon" data-tooltip="The exact original transcript with PHI values replaced by entity-type tags. Word order and clinical content are preserved verbatim.">?</span></h3>
             </div>
             <pre id="redacted" class="content-box"></pre>
           </article>
 
           <article class="panel output-panel">
             <div class="panel-header">
-              <h3>DETECTED ENTITIES <span class="tooltip-icon" data-tooltip="Every identified PHI entity and its confidence score.">?</span></h3>
+              <h3>DETECTED ENTITIES <span class="tooltip-icon" data-tooltip="A full list of identified PHI entities, their original values, and detection confidence scores.">?</span></h3>
             </div>
             <div id="entityChips" class="chips-container"></div>
           </article>
 
           <article class="panel output-panel">
             <div class="panel-header">
-              <h3>SOAP NOTE SUMMARY <span class="tooltip-icon" data-tooltip="Clinical note generated from the REDACTED transcript. Zero PHI ever reaches the AI model.">?</span></h3>
+              <h3>GENERATED SOAP NOTE <span class="tooltip-icon" data-tooltip="Structured clinical note generated by the local language model using only the redacted transcript. No PHI is passed to the model at any point.">?</span></h3>
             </div>
             <pre id="soap" class="content-box soap-box">Awaiting pipeline execution...</pre>
           </article>
@@ -203,7 +198,7 @@
     </main>
 
     <footer class="footer">
-      <p>&copy; 2026 Plaud AI Concept Demo &mdash; Confidential</p>
+      <p>&copy; 2026 Plaud AI. PHI-Safe Pipeline Concept. All processing is performed on-device.</p>
     </footer>
 
     <script>
@@ -436,12 +431,12 @@ PLAN:
           const res = await fetch(url);
           const blob = await res.blob();
           state.audioFile = new File([blob], url.split("/").pop(), { type: blob.type || "audio/mpeg" });
-          btn.textContent = "SAMPLE LOADED ✅";
+          btn.textContent = "SAMPLE LOADED";
           btn.style.borderColor = "var(--accent-gold)";
           btn.style.color = "var(--accent-gold)";
           el("transcriptInput").value = "";
           el("transcriptInput").placeholder = "Sample audio loaded. Click RUN PIPELINE to process.";
-          el("status").textContent = "Sample loaded! Click RUN PIPELINE to see PHI detection in action.";
+          el("status").textContent = "Sample audio loaded. Click RUN PIPELINE to process.";
         } catch(e) {
           btn.textContent = "LOAD ERROR";
           el("status").textContent = "Could not load sample audio. Check your connection.";
@@ -491,7 +486,7 @@ PLAN:
 
       // ─── Boot ────────────────────────────────────────────────────────────────
       el("transcriptInput").value = "";
-      el("status").textContent = "Try loading the sample audio above, or type a transcript to see live PHI detection.";
+      el("status").textContent = "Load the sample audio above, or paste a clinical transcript to see live PHI detection.";
     </script>
   </body>
 </html>
