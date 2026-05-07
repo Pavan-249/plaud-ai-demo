@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Plaud AI | PHI-Safe Pipeline Presentation</title>
+  <link href="https://fonts.googleapis.com/css2?family=Jost:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/reveal.min.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/theme/black.min.css"/>
+  <style>
+    :root {
+      --gold: #BBA14F;
+      --gold-light: #D4B65E;
+      --dark: #0A0A0A;
+      --surface: #141414;
+      --border: #2A2A2A;
+      --text: #F4F4F4;
+      --muted: #888;
+    }
+    .reveal { font-family: 'Jost', 'Helvetica Neue', sans-serif; }
+    .reveal .slides section { 
+      text-align: left; 
+      background: transparent; 
+    }
+    .reveal h1, .reveal h2, .reveal h3 {
+      font-family: 'Jost', sans-serif;
+      font-weight: 300;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text);
+    }
+    .reveal h1 { font-size: 3.2em; line-height: 1.05; }
+    .reveal h2 { font-size: 1.8em; margin-bottom: 0.6em; }
+    .reveal h3 { font-size: 1.1em; color: var(--gold); margin-bottom: 0.4em; }
+    .reveal p, .reveal li { 
+      font-size: 0.95em; 
+      color: #D4D4D4; 
+      line-height: 1.7; 
+      font-weight: 300; 
+    }
+    .reveal ul { list-style: none; padding: 0; }
+    .reveal li::before { content: "—"; color: var(--gold); margin-right: 12px; }
+    .gold { color: var(--gold); }
+    .reveal .slides { background: var(--dark); }
+    .bg-dot { 
+      position: fixed; inset: 0; z-index: -1;
+      background-image: radial-gradient(circle at 20% 25%, rgba(187,161,79,0.12) 0%, transparent 45%),
+                        radial-gradient(circle at 80% 75%, rgba(42,42,60,0.5) 0%, transparent 45%);
+    }
+
+    /* Card grid */
+    .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px; }
+    .card { 
+      background: rgba(20,20,20,0.8); 
+      border: 1px solid var(--border); 
+      border-radius: 8px; 
+      padding: 24px 28px; 
+    }
+    .card-icon { font-size: 1.8em; margin-bottom: 10px; }
+    .card h3 { margin: 0 0 8px; font-size: 0.85em; }
+    .card p { margin: 0; font-size: 0.85em; }
+
+    /* Flow diagram */
+    .flow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 28px; }
+    .flow-step { 
+      background: rgba(20,20,20,0.85); 
+      border: 1px solid var(--border); 
+      border-radius: 6px; 
+      padding: 14px 20px; 
+      font-size: 0.8em; 
+      letter-spacing: 0.05em;
+      text-align: center;
+      flex: 1;
+    }
+    .flow-step.gold { border-color: var(--gold); color: var(--gold); font-weight: 500; }
+    .flow-arrow { color: var(--muted); font-size: 1.4em; flex-shrink: 0; }
+
+    /* Stat chips */
+    .stats { display: flex; gap: 24px; margin-top: 32px; }
+    .stat { 
+      flex: 1; 
+      background: rgba(20,20,20,0.85); 
+      border: 1px solid var(--border); 
+      border-radius: 8px; 
+      padding: 28px 24px; 
+      text-align: center; 
+    }
+    .stat-num { font-size: 2.4em; font-weight: 600; color: var(--gold); display: block; }
+    .stat-label { font-size: 0.75em; letter-spacing: 0.1em; color: var(--muted); text-transform: uppercase; }
+
+    /* Divider line */
+    .rule { height: 1px; background: var(--border); margin: 20px 0; }
+
+    /* CTA slide */
+    .cta-hero { text-align: center; }
+    .cta-hero h1 { font-size: 2.6em; }
+    .cta-link { 
+      display: inline-block; margin-top: 32px;
+      border: 1px solid var(--gold); color: var(--gold); 
+      padding: 14px 36px; font-family: 'Jost', sans-serif; 
+      font-size: 0.85em; letter-spacing: 0.15em;
+      text-decoration: none; border-radius: 4px;
+      transition: all 0.2s;
+    }
+    .reveal a.cta-link:hover { background: var(--gold); color: #000; }
+    .subtitle-slide { font-size: 1em; color: var(--muted); margin-top: 12px; font-weight: 300; }
+  </style>
+</head>
+<body style="background:#0A0A0A">
+<div class="bg-dot"></div>
+<div class="reveal">
+  <div class="slides">
+
+    <!-- Slide 1: Title -->
+    <section data-transition="fade">
+      <h1>PLAUD AI<br><span class="gold">PHI-SAFE</span><br>PIPELINE</h1>
+      <p class="subtitle-slide">A proof-of-concept for privacy-first clinical documentation.</p>
+      <div class="rule"></div>
+      <p style="font-size:0.8em; color:var(--muted);">Built as a concept to explore what Plaud could offer in healthcare settings.</p>
+    </section>
+
+    <!-- Slide 2: The Problem -->
+    <section data-transition="slide">
+      <h2>The <span class="gold">Problem</span></h2>
+      <p>Medical consultation recordings contain extremely sensitive information. Sending them to cloud AI services raises serious compliance and privacy concerns.</p>
+      <div class="card-grid" style="margin-top:28px">
+        <div class="card">
+          <div class="card-icon">🏥</div>
+          <h3>HIPAA Compliance</h3>
+          <p>Patient data in audio recordings must be tightly controlled and cannot flow through third-party cloud pipelines.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">⚡</div>
+          <h3>Real-Time Needs</h3>
+          <p>Clinicians need instant documentation. Cloud round-trips create unacceptable latency during live consultations.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🔒</div>
+          <h3>Data Sovereignty</h3>
+          <p>Hospitals and health systems require that sensitive data never leaves their network perimeter.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">📋</div>
+          <h3>Documentation Burden</h3>
+          <p>Physicians spend 2+ hours per day on clinical notes. Automation could reclaim that time.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 3: The Solution -->
+    <section data-transition="slide">
+      <h2>The <span class="gold">Solution</span></h2>
+      <p>A 100% on-premise pipeline that sanitizes patient data before any AI processing occurs.</p>
+      <div class="flow">
+        <div class="flow-step">🎙️<br>Audio Input<br><small style="color:var(--muted)">Plaud Recording</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">📝<br>Transcription<br><small style="color:var(--muted)">Whisper (Local)</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step gold">🔍<br>PHI Detection<br><small>Presidio + spaCy</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step gold">✂️<br>Redaction<br><small>On-Device</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">🤖<br>SOAP Note<br><small style="color:var(--muted)">Local LLM</small></div>
+      </div>
+      <div class="rule" style="margin-top:32px"></div>
+      <p style="font-size:0.85em; color:var(--gold)">⚠️ PHI is identified and removed BEFORE any AI model ever sees the text.</p>
+    </section>
+
+    <!-- Slide 4: Key Features -->
+    <section data-transition="slide">
+      <h2>Key <span class="gold">Features</span></h2>
+      <div class="stats">
+        <div class="stat">
+          <span class="stat-num">&lt;1s</span>
+          <span class="stat-label">PHI Detection Latency</span>
+        </div>
+        <div class="stat">
+          <span class="stat-num">9+</span>
+          <span class="stat-label">Entity Types Detected</span>
+        </div>
+        <div class="stat">
+          <span class="stat-num">0</span>
+          <span class="stat-label">Data Sent to Cloud</span>
+        </div>
+      </div>
+      <div class="rule"></div>
+      <ul>
+        <li>Detects Names, SSNs, Phone Numbers, Medical IDs, Dates, Locations and more</li>
+        <li>Generates structured clinical SOAP notes from redacted transcripts</li>
+        <li>Fully containerized with Docker for instant, reproducible deployment</li>
+        <li>Beautiful, intuitive interface designed for non-technical clinical staff</li>
+      </ul>
+    </section>
+
+    <!-- Slide 5: Why Plaud -->
+    <section data-transition="slide">
+      <h2>Why <span class="gold">Plaud?</span></h2>
+      <p>Plaud is building the category-defining AI recorder. Healthcare is a massive, underserved, high-value market.</p>
+      <div class="card-grid" style="margin-top:28px">
+        <div class="card">
+          <h3>MARKET OPPORTUNITY</h3>
+          <p>The global clinical documentation market is $5.8B and growing at 8% annually.</p>
+        </div>
+        <div class="card">
+          <h3>NATURAL FIT</h3>
+          <p>Plaud's hardware is already in clinicians' pockets. PHI-safe processing is the software layer that unlocks healthcare.</p>
+        </div>
+        <div class="card">
+          <h3>COMPETITIVE MOAT</h3>
+          <p>"On-device PHI processing" is a powerful differentiator that enterprise health systems will pay a premium for.</p>
+        </div>
+        <div class="card">
+          <h3>COMPLIANCE READY</h3>
+          <p>The architecture is designed to be HIPAA-friendly by default. No retooling required for enterprise sales.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 6: CTA -->
+    <section data-transition="fade">
+      <div class="cta-hero">
+        <h1>SEE IT<br><span class="gold">LIVE</span></h1>
+        <p>Experience the PHI detection and SOAP note generation in your browser, right now.</p>
+        <a class="cta-link" href="index.html">LAUNCH DEMO →</a>
+      </div>
+    </section>
+
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/reveal.min.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    controls: true,
+    progress: true,
+    transition: 'slide',
+    backgroundTransition: 'fade',
+    plugins: []
+  });
+</script>
+</body>
+</html>

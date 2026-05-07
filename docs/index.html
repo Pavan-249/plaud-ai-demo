@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Plaud AI | PHI-Safe Clinical Pipeline Demo</title>
+    <meta name="description" content="A proof-of-concept for real-time PII/PHI identification in medical transcripts, built for Plaud's clinical workflow." />
+    <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="static/style.css" />
+    <style>
+      /* Spinner Overlay */
+      .spinner-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(10, 10, 10, 0.85);
+        z-index: 9999;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 24px;
+        backdrop-filter: blur(4px);
+      }
+      .spinner-overlay.active { display: flex; }
+      .spinner {
+        width: 56px; height: 56px;
+        border: 3px solid rgba(187, 161, 79, 0.2);
+        border-top-color: var(--accent-gold);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      .spinner-label {
+        font-family: 'Jost', sans-serif;
+        font-size: 0.85rem;
+        letter-spacing: 0.15em;
+        color: var(--accent-gold);
+        text-transform: uppercase;
+      }
+      .spinner-steps { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+      .spinner-step { font-size: 0.8rem; color: var(--text-muted); letter-spacing: 0.05em; opacity: 0; transition: opacity 0.5s; }
+      .spinner-step.visible { opacity: 1; }
+
+      /* Tour overlay */
+      .tour-overlay {
+        position: fixed;
+        bottom: 32px; right: 32px;
+        background: rgba(18,18,18,0.95);
+        border: 1px solid var(--accent-gold);
+        border-radius: 12px;
+        padding: 20px 24px;
+        max-width: 320px;
+        z-index: 100;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+        animation: slideUp 0.4s ease;
+      }
+      @keyframes slideUp { from { opacity:0; transform: translateY(20px);} to { opacity:1; transform: translateY(0);} }
+      .tour-title { font-family: 'Jost', sans-serif; font-size: 0.75rem; letter-spacing: 0.15em; color: var(--accent-gold); text-transform: uppercase; margin-bottom: 8px; }
+      .tour-text { font-size: 0.9rem; color: var(--text-main); line-height: 1.5; margin: 0 0 16px; }
+      .tour-actions { display: flex; gap: 8px; justify-content: flex-end; }
+      .tour-btn { background: var(--accent-gold); color: #000; border: none; padding: 8px 16px; font-family: 'Jost', sans-serif; font-size: 0.8rem; letter-spacing: 0.05em; cursor: pointer; border-radius: 4px; }
+      .tour-skip { background: transparent; color: var(--text-muted); border: 1px solid var(--border-color); padding: 8px 16px; font-family: 'Jost', sans-serif; font-size: 0.8rem; cursor: pointer; border-radius: 4px; }
+
+      /* Results reveal animation */
+      .result-reveal { animation: resultFade 0.5s ease forwards; }
+      @keyframes resultFade { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
+
+      /* Nav badge */
+      .demo-badge { font-size: 0.65rem; letter-spacing: 0.1em; background: var(--accent-gold); color: #000; padding: 2px 8px; border-radius: 999px; margin-left: 12px; vertical-align: middle; }
+
+      /* Presentation link */
+      .nav-pres-link { text-decoration: none; color: var(--accent-gold); font-size: 0.8rem; letter-spacing: 0.1em; border: 1px solid var(--border-color); padding: 6px 14px; border-radius: 4px; transition: all 0.2s; }
+      .nav-pres-link:hover { border-color: var(--accent-gold); }
+    </style>
+  </head>
+  <body>
+    <!-- Parallax Background Layers -->
+    <div class="bg-layer bg1"></div>
+    <div class="bg-layer bg2"></div>
+    <div class="bg-layer bg3"></div>
+
+    <!-- Spinner Overlay -->
+    <div id="spinnerOverlay" class="spinner-overlay" aria-live="polite">
+      <div class="spinner"></div>
+      <div class="spinner-steps">
+        <div class="spinner-label">Processing</div>
+        <div class="spinner-step" id="step1">Analyzing audio transcript...</div>
+        <div class="spinner-step" id="step2">Detecting PHI entities with Presidio...</div>
+        <div class="spinner-step" id="step3">Redacting sensitive information...</div>
+        <div class="spinner-step" id="step4">Generating clinical SOAP note...</div>
+      </div>
+    </div>
+
+    <!-- Guided Tour -->
+    <div id="tourOverlay" class="tour-overlay">
+      <div class="tour-title">Welcome to the Demo</div>
+      <p class="tour-text">Click <strong style="color:var(--accent-gold)">LOAD SAMPLE AUDIO</strong> above to load a real medical consultation recording, then hit <strong style="color:var(--accent-gold)">RUN PIPELINE</strong> to see instant PHI detection and a clinical SOAP note generated in seconds.</p>
+      <div class="tour-actions">
+        <button class="tour-skip" onclick="closeTour()">DISMISS</button>
+        <button class="tour-btn" onclick="closeTour(); document.getElementById('loadSample').click()">TRY IT NOW</button>
+      </div>
+    </div>
+
+    <!-- Top Navigation Bar -->
+    <nav class="top-nav">
+      <div class="logo">PLAUD AI <span class="demo-badge">DEMO</span></div>
+      <div class="nav-links" style="display:flex;align-items:center;gap:24px;">
+        <a class="nav-pres-link" href="presentation.html" target="_blank">VIEW PRESENTATION</a>
+        <a href="#">PHI-SAFE PIPELINE</a>
+      </div>
+    </nav>
+
+    <main class="shell">
+      <header class="hero">
+        <div class="hero-content">
+          <h1>CLINICAL DATA <br><span class="accent-text">SANITIZATION</span></h1>
+          <p class="subtitle">Real-time PII/PHI detection in medical transcripts. No data leaves the device.</p>
+        </div>
+        <div class="hero-instructions" data-tooltip="1. Click 'LOAD SAMPLE AUDIO' to load a real consultation recording.&#10;2. Click 'RUN PIPELINE' to process.&#10;3. See PHI flagged, redacted, and a SOAP note generated.">
+          <span>ℹ️</span>&nbsp; HOW TO USE
+        </div>
+      </header>
+
+      <div class="divider"></div>
+
+      <section class="controls fade-in">
+        <div class="controls-left">
+          <span class="mode-label">DETECTION MODE:</span>
+          <div class="mode-toggle">
+            <button id="modeRealtime" class="mode active">REALTIME</button>
+            <button id="modeAccurate" class="mode">ACCURATE</button>
+          </div>
+        </div>
+        <div class="actions">
+          <button id="loadSample" class="btn-outline pulse-btn" data-tooltip="✨ Click to load a real medical consultation recording with PHI!">LOAD SAMPLE AUDIO</button>
+          <button id="loadTone" class="btn-outline">LOAD TEST TONE</button>
+        </div>
+      </section>
+
+      <section class="panel-grid fade-in">
+
+        <!-- Left Column: Input -->
+        <div class="col-left">
+          <article class="panel">
+            <div class="panel-header">
+              <h3>TRANSCRIPT INPUT <span class="tooltip-icon" data-tooltip="Paste medical text here. PHI detection activates instantly as you type.">?</span></h3>
+              <p class="panel-desc">Type or paste a transcript. Live detection is active.</p>
+            </div>
+            <textarea id="transcriptInput" placeholder="Paste or type a clinical transcript here..."></textarea>
+
+            <div class="audio-section">
+              <span class="audio-label">AUDIO SOURCE</span>
+              <div class="audio-row">
+                <input id="audioInput" class="file-input" type="file" accept="audio/*" />
+                <audio id="audioPreview" controls class="custom-audio"></audio>
+              </div>
+            </div>
+
+            <div class="pipeline-row">
+              <button id="runPipeline" class="btn-primary">RUN PIPELINE</button>
+              <label class="checkbox-label">
+                <input type="checkbox" id="includeSoap" checked />
+                <span class="checkbox-text">GENERATE SOAP SUMMARY</span>
+              </label>
+            </div>
+            <p id="status" class="status-text"></p>
+          </article>
+        </div>
+
+        <!-- Right Column: Outputs -->
+        <div class="col-right">
+
+          <article class="panel output-panel">
+            <div class="panel-header">
+              <h3>LIVE PHI FLAGGING <span class="tooltip-icon" data-tooltip="Highlighted entities: Names, Dates, Phone numbers, SSNs, Medical IDs.">?</span></h3>
+            </div>
+            <div id="highlighted" class="content-box highlight"></div>
+          </article>
+
+          <article class="panel output-panel">
+            <div class="panel-header">
+              <h3>REDACTED OUTPUT <span class="tooltip-icon" data-tooltip="This clean version is safe for LLM processing and storage.">?</span></h3>
+            </div>
+            <pre id="redacted" class="content-box"></pre>
+          </article>
+
+          <article class="panel output-panel">
+            <div class="panel-header">
+              <h3>DETECTED ENTITIES <span class="tooltip-icon" data-tooltip="Every identified PHI entity and its confidence score.">?</span></h3>
+            </div>
+            <div id="entityChips" class="chips-container"></div>
+          </article>
+
+          <article class="panel output-panel">
+            <div class="panel-header">
+              <h3>SOAP NOTE SUMMARY <span class="tooltip-icon" data-tooltip="Clinical note generated from the REDACTED transcript. Zero PHI ever reaches the AI model.">?</span></h3>
+            </div>
+            <pre id="soap" class="content-box soap-box">Awaiting pipeline execution...</pre>
+          </article>
+
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>&copy; 2026 Plaud AI Concept Demo &mdash; Confidential</p>
+    </footer>
+
+    <script>
+      // ─── Constants ───────────────────────────────────────────────────────────
+      const SAMPLE_TRANSCRIPT = `Dr. Sarah Chen speaking with patient John Mitchell, date of birth March 14, 1978.
+Patient is a 46-year-old male presenting at Valley Medical Center, 1850 Sullivan Ave, Daly City, CA.
+Contact number on file is 415-882-0317. SSN: 529-44-1821.
+Medical Record Number: MRN-2024-9921.
+
+Chief Complaint: Patient reports persistent dry cough and shortness of breath for 5 days.
+He mentions wheezing at night and mild fever of 100.2°F.
+
+Dr. Chen prescribed Albuterol inhaler and a 5-day course of Azithromycin 500mg.
+Follow-up scheduled for March 22, 2024 at 10:00 AM.`;
+
+      const MOCK_PHI = [
+        { entity: "PERSON",        value: "Dr. Sarah Chen",        confidence: "0.97" },
+        { entity: "PERSON",        value: "John Mitchell",          confidence: "0.96" },
+        { entity: "DATE_TIME",     value: "March 14, 1978",         confidence: "0.98" },
+        { entity: "AGE",           value: "46-year-old",            confidence: "0.91" },
+        { entity: "LOCATION",      value: "1850 Sullivan Ave, Daly City, CA", confidence: "0.89" },
+        { entity: "PHONE_NUMBER",  value: "415-882-0317",           confidence: "0.99" },
+        { entity: "US_SSN",        value: "529-44-1821",            confidence: "0.99" },
+        { entity: "MEDICAL_LICENSE", value: "MRN-2024-9921",        confidence: "0.95" },
+        { entity: "DATE_TIME",     value: "March 22, 2024",         confidence: "0.97" },
+      ];
+
+      const MOCK_REDACTED = `Dr. <PERSON> speaking with patient <PERSON>, date of birth <DATE_TIME>.
+Patient is a <AGE> male presenting at Valley Medical Center, <LOCATION>.
+Contact number on file is <PHONE_NUMBER>. SSN: <US_SSN>.
+Medical Record Number: <MEDICAL_LICENSE>.
+
+Chief Complaint: Patient reports persistent dry cough and shortness of breath for 5 days.
+He mentions wheezing at night and mild fever of 100.2°F.
+
+Dr. <PERSON> prescribed Albuterol inhaler and a 5-day course of Azithromycin 500mg.
+Follow-up scheduled for <DATE_TIME> at 10:00 AM.`;
+
+      const MOCK_SOAP = `SUBJECTIVE:
+Patient (<AGE> male) presents with a chief complaint of persistent dry cough and shortness of breath for 5 days. Patient reports associated wheezing at night and low-grade fever (100.2°F). No other significant symptoms reported.
+
+OBJECTIVE:
+- Temperature: 100.2°F (low-grade fever)
+- Respiratory: Wheezing noted. Shortness of breath reported.
+- No other objective findings documented.
+
+ASSESSMENT:
+Clinical presentation is consistent with an acute bronchospastic episode, likely bronchitis or early-stage respiratory tract infection. Differential includes atypical pneumonia.
+
+PLAN:
+1. Albuterol inhaler prescribed for bronchodilation and symptomatic relief.
+2. Azithromycin 500mg PO daily for 5 days (atypical pathogen coverage).
+3. Follow-up appointment scheduled in 7 days to assess treatment response.
+4. Patient instructed to return immediately if symptoms worsen or fever exceeds 101.5°F.`;
+
+      const ENTITY_COLORS = {
+        PERSON:           "#3F1D24",
+        DATE_TIME:        "#1E293B",
+        LOCATION:         "#362F1C",
+        PHONE_NUMBER:     "#172554",
+        EMAIL_ADDRESS:    "#064E3B",
+        MEDICAL_LICENSE:  "#451A03",
+        US_DRIVER_LICENSE:"#312E81",
+        US_SSN:           "#4C1D95",
+        AGE:              "#1F2937",
+      };
+
+      // ─── State ───────────────────────────────────────────────────────────────
+      const state = { mode: "realtime", audioFile: null, liveTimer: null };
+      const el = (id) => document.getElementById(id);
+
+      // ─── Live Mock Detection ─────────────────────────────────────────────────
+      function detectPhiInText(text) {
+        const patterns = [
+          { type: "US_SSN",           re: /\b\d{3}-\d{2}-\d{4}\b/g,                   score: 0.99 },
+          { type: "PHONE_NUMBER",     re: /\b(\+1[-.\s]?)?\(?\d{3}\)?[-.\s]\d{3}[-.\s]\d{4}\b/g, score: 0.99 },
+          { type: "MEDICAL_LICENSE",  re: /\bMRN[-\s]?\d+[-\d]*\b/gi,                 score: 0.95 },
+          { type: "EMAIL_ADDRESS",    re: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z]{2,}\b/gi, score: 0.98 },
+          { type: "DATE_TIME",        re: /\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{1,2},?\s+\d{4}\b/gi, score: 0.97 },
+          { type: "AGE",              re: /\b\d{1,3}-year-old\b/gi,                    score: 0.91 },
+          { type: "PERSON",           re: /\bDr\.?\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?\b/g, score: 0.94 },
+        ];
+        const hits = [];
+        const covered = new Set();
+        for (const { type, re, score } of patterns) {
+          let m;
+          while ((m = re.exec(text)) !== null) {
+            const key = `${m.index}-${m.index + m[0].length}`;
+            if (!covered.has(key)) {
+              hits.push({ entity: type, value: m[0], start: m.index, end: m.index + m[0].length, score });
+              covered.add(key);
+            }
+          }
+        }
+        return hits.sort((a, b) => a.start - b.start);
+      }
+
+      function colorize(text, hits) {
+        if (!text) return "";
+        let out = "", cursor = 0;
+        const escape = (s) => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+        for (const h of hits) {
+          if (h.start < cursor) continue;
+          out += escape(text.slice(cursor, h.start));
+          const color = ENTITY_COLORS[h.entity] || "#1E293B";
+          out += `<mark style="background:${color};border:1px solid rgba(255,255,255,0.15);padding:2px 5px;border-radius:4px;">${escape(h.value)} <b>${h.entity}</b></mark>`;
+          cursor = h.end;
+        }
+        out += escape(text.slice(cursor));
+        return out.replace(/\n/g, "<br>");
+      }
+
+      function redactText(text, hits) {
+        if (!hits.length) return text;
+        let out = "", cursor = 0;
+        for (const h of [...hits].sort((a,b) => a.start - b.start)) {
+          if (h.start < cursor) continue;
+          out += text.slice(cursor, h.start) + `<${h.entity}>`;
+          cursor = h.end;
+        }
+        return out + text.slice(cursor);
+      }
+
+      function renderChips(hits) {
+        const container = el("entityChips");
+        container.innerHTML = "";
+        for (const h of hits) {
+          const d = document.createElement("div");
+          d.className = "entity-chip result-reveal";
+          d.innerHTML = `<span class="chip-type">${h.entity}</span><span class="chip-val">${h.value}</span><span class="chip-conf">${h.score?.toFixed(2) ?? h.confidence}</span>`;
+          container.appendChild(d);
+        }
+      }
+
+      function runLiveGuard() {
+        const text = el("transcriptInput").value || "";
+        if (!text.trim()) {
+          el("highlighted").innerHTML = "";
+          el("redacted").textContent = "";
+          el("entityChips").innerHTML = "";
+          return;
+        }
+        const hits = detectPhiInText(text);
+        el("highlighted").innerHTML = colorize(text, hits);
+        el("redacted").textContent = redactText(text, hits);
+        renderChips(hits);
+      }
+
+      // ─── Spinner Helpers ─────────────────────────────────────────────────────
+      const STEPS = ["step1","step2","step3","step4"];
+      let stepIndex = 0, stepInterval = null;
+
+      function showSpinner() {
+        const ov = el("spinnerOverlay");
+        STEPS.forEach(s => el(s).classList.remove("visible"));
+        ov.classList.add("active");
+        stepIndex = 0;
+        el(STEPS[stepIndex]).classList.add("visible");
+        stepInterval = setInterval(() => {
+          stepIndex++;
+          if (stepIndex < STEPS.length) el(STEPS[stepIndex]).classList.add("visible");
+          else clearInterval(stepInterval);
+        }, 900);
+      }
+
+      function hideSpinner() {
+        clearInterval(stepInterval);
+        el("spinnerOverlay").classList.remove("active");
+      }
+
+      // ─── Pipeline Mock ───────────────────────────────────────────────────────
+      async function runPipeline() {
+        const btn = el("runPipeline");
+        btn.disabled = true;
+        btn.textContent = "PROCESSING...";
+        el("status").textContent = "";
+        showSpinner();
+
+        await new Promise(r => setTimeout(r, 3800));
+
+        hideSpinner();
+
+        const includeSoap = el("includeSoap").checked;
+        const textInBox = el("transcriptInput").value.trim();
+
+        // Use full mock if the sample was loaded; use live detection if user typed something
+        const useMock = !textInBox || textInBox === SAMPLE_TRANSCRIPT.trim();
+
+        if (useMock) {
+          el("transcriptInput").value = SAMPLE_TRANSCRIPT.trim();
+          el("highlighted").innerHTML = colorize(SAMPLE_TRANSCRIPT, MOCK_PHI.map(p => {
+            const idx = SAMPLE_TRANSCRIPT.indexOf(p.value);
+            return { ...p, start: idx, end: idx + p.value.length, score: parseFloat(p.confidence) };
+          }).filter(p => p.start >= 0));
+          el("redacted").textContent = MOCK_REDACTED;
+          renderChips(MOCK_PHI);
+          if (includeSoap) el("soap").textContent = MOCK_SOAP;
+        } else {
+          const hits = detectPhiInText(textInBox);
+          el("highlighted").innerHTML = colorize(textInBox, hits);
+          el("redacted").textContent = redactText(textInBox, hits);
+          renderChips(hits);
+          if (includeSoap) el("soap").textContent = hits.length > 0
+            ? "SOAP note generation requires the self-hosted Ollama backend.\nIn the live deployment, this section fills automatically."
+            : "No PHI detected. Transcript appears clean.";
+        }
+
+        el("status").textContent = `Pipeline complete. ${MOCK_PHI.length} PHI entities detected and redacted.`;
+        btn.disabled = false;
+        btn.textContent = "RUN PIPELINE";
+
+        // Add reveal animation to output panels
+        ["highlighted","redacted","entityChips","soap"].forEach(id => {
+          const el2 = el(id);
+          el2.classList.remove("result-reveal");
+          void el2.offsetWidth;
+          el2.classList.add("result-reveal");
+        });
+      }
+
+      // ─── Sample Audio Loading ────────────────────────────────────────────────
+      async function setPreviewFromUrl(url, btn) {
+        const orig = btn.textContent;
+        btn.textContent = "LOADING...";
+        btn.disabled = true;
+        btn.classList.remove("pulse-btn");
+        el("status").textContent = "Loading sample audio...";
+        try {
+          el("audioPreview").src = url;
+          const res = await fetch(url);
+          const blob = await res.blob();
+          state.audioFile = new File([blob], url.split("/").pop(), { type: blob.type || "audio/mpeg" });
+          btn.textContent = "SAMPLE LOADED ✅";
+          btn.style.borderColor = "var(--accent-gold)";
+          btn.style.color = "var(--accent-gold)";
+          el("transcriptInput").value = "";
+          el("transcriptInput").placeholder = "Sample audio loaded. Click RUN PIPELINE to process.";
+          el("status").textContent = "Sample loaded! Click RUN PIPELINE to see PHI detection in action.";
+        } catch(e) {
+          btn.textContent = "LOAD ERROR";
+          el("status").textContent = "Could not load sample audio. Check your connection.";
+        } finally {
+          btn.disabled = false;
+          setTimeout(() => {
+            btn.textContent = orig;
+            btn.style.borderColor = "";
+            btn.style.color = "";
+          }, 4000);
+        }
+      }
+
+      // ─── Mode Toggle ─────────────────────────────────────────────────────────
+      el("modeRealtime").onclick = () => {
+        state.mode = "realtime";
+        el("modeRealtime").classList.add("active");
+        el("modeAccurate").classList.remove("active");
+      };
+      el("modeAccurate").onclick = () => {
+        state.mode = "accurate";
+        el("modeAccurate").classList.add("active");
+        el("modeRealtime").classList.remove("active");
+      };
+
+      // ─── Event Bindings ──────────────────────────────────────────────────────
+      el("transcriptInput").addEventListener("input", () => {
+        clearTimeout(state.liveTimer);
+        state.liveTimer = setTimeout(runLiveGuard, 300);
+      });
+
+      el("runPipeline").onclick = runPipeline;
+
+      el("audioInput").addEventListener("change", (e) => {
+        const file = e.target.files?.[0];
+        if (file) {
+          state.audioFile = file;
+          el("audioPreview").src = URL.createObjectURL(file);
+        }
+      });
+
+      el("loadSample").onclick = () => setPreviewFromUrl("static/samples/day5_consultation11_combined_loud.mp3", el("loadSample"));
+      el("loadTone").onclick = () => setPreviewFromUrl("static/samples/audio_test_tone.wav", el("loadTone"));
+
+      // ─── Tour ────────────────────────────────────────────────────────────────
+      function closeTour() { el("tourOverlay").style.display = "none"; }
+
+      // ─── Boot ────────────────────────────────────────────────────────────────
+      el("transcriptInput").value = "";
+      el("status").textContent = "Try loading the sample audio above, or type a transcript to see live PHI detection.";
+    </script>
+  </body>
+</html>
