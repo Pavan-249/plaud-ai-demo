@@ -352,12 +352,19 @@
 
         const includeSoap = el("includeSoap").checked;
         const textInBox = el("transcriptInput").value.trim();
-        const audioLoaded = state.audioFile !== null;
+        const sampleAudioLoaded = state.sampleAudioLoaded;
+        const customAudioLoaded = state.audioFile !== null && !sampleAudioLoaded;
 
-        if (audioLoaded || !textInBox) {
-          // Show real Whisper transcription result
+        if (customAudioLoaded) {
+          // Cannot transcribe arbitrary audio in a static browser app
+          el("highlighted").innerHTML = "<span style='color:var(--text-muted);font-size:0.9em;line-height:1.8;'>Audio transcription from uploaded files requires the full local deployment with the Whisper backend running.\n\nTo see transcription in this demo, use the LOAD SAMPLE AUDIO button to load the pre-processed consultation recording.\n\nAlternatively, paste your transcript text directly into the text area above and PHI detection will run immediately.</span>".replace(/\n/g, "<br>");
+          el("redacted").textContent = "";
+          el("entityChips").innerHTML = "";
+          el("soap").textContent = "";
+          el("status").textContent = "Custom audio transcription requires the local server deployment.";
+        } else if (sampleAudioLoaded || !textInBox) {
+          // Show the real Whisper transcription pre-computed from the sample audio
           el("transcriptInput").value = SAMPLE_TRANSCRIPT;
-          // Build PHI hit objects with positions
           const hitsWithPos = MOCK_PHI.map(p => {
             const idx = SAMPLE_TRANSCRIPT.indexOf(p.value);
             return { ...p, start: idx, end: idx + p.value.length, score: parseFloat(p.confidence) };
@@ -368,7 +375,7 @@
           if (includeSoap) el("soap").textContent = "SOAP note generation is available in the full local deployment using the self-hosted language model.";
           el("status").textContent = `Transcription complete. ${MOCK_PHI.length} PHI entities identified and redacted.`;
         } else {
-          // User typed custom text — use live JS detection
+          // User pasted custom text -- use live JS PHI detection
           const hits = detectPhiInText(textInBox);
           el("highlighted").innerHTML = colorize(textInBox, hits);
           el("redacted").textContent = redactText(textInBox, hits);
@@ -406,7 +413,8 @@
           // Clear the text box so user knows audio is the source
           el("transcriptInput").value = "";
           el("transcriptInput").placeholder = "Audio loaded. Click RUN PIPELINE to transcribe and detect PHI.";
-          state.audioLoaded = true;
+          state.sampleAudioLoaded = true;
+          state.audioFile = blob;
           el("status").textContent = "Audio loaded. Click RUN PIPELINE to process.";
         } catch(e) {
           btn.textContent = "LOAD ERROR";
@@ -445,7 +453,11 @@
         const file = e.target.files?.[0];
         if (file) {
           state.audioFile = file;
+          state.sampleAudioLoaded = false; // custom upload, not the pre-computed sample
           el("audioPreview").src = URL.createObjectURL(file);
+          el("transcriptInput").value = "";
+          el("transcriptInput").placeholder = "Custom audio detected. Paste the transcript manually, or use LOAD SAMPLE AUDIO for the pre-computed demo.";
+          el("status").textContent = "Custom audio loaded. Note: transcription from arbitrary files requires the local backend deployment. Paste your transcript above, or use LOAD SAMPLE AUDIO.";
         }
       });
 
