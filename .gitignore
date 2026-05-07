@@ -1,4 +1,18 @@
-.venv/
+# Python
 __pycache__/
 *.pyc
+*.pyo
+.venv/
+*.egg-info/
+
+# Mac
 .DS_Store
+
+# Temp Office lock files
+~$*
+
+# PDF (not needed in repo)
+*.pdf
+
+# Secrets
+.env
