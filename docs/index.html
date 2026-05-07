@@ -202,57 +202,26 @@
     </footer>
 
     <script>
-      // ─── Constants ───────────────────────────────────────────────────────────
-      const SAMPLE_TRANSCRIPT = `Dr. Sarah Chen speaking with patient John Mitchell, date of birth March 14, 1978.
-Patient is a 46-year-old male presenting at Valley Medical Center, 1850 Sullivan Ave, Daly City, CA.
-Contact number on file is 415-882-0317. SSN: 529-44-1821.
-Medical Record Number: MRN-2024-9921.
+      // ─── Constants ──────────────────────────────────────────────────────────
+      // Real transcript produced by Whisper (accurate mode) on the sample audio
+      const SAMPLE_TRANSCRIPT = `Hi. Hi there, it's Dr Smith from Babylon. Hi. Can you confirm your name, date of birth and your home address please? Yes, my name is Mary Jones. My date of birth is January 1st, 1980 and my address is Sixties Lone Avenue, London. Okay, are you in a private place where you can have a consultation today? Absolutely. What can I do for you? So, a couple things, I think I may have overdone my workouts and now my knees are hurting and they're clicking a lot and it's starting to worry me. I can't run very far anymore without just feeling pain in my knees and then sometimes I also get this weird tingling in my toes. So yeah, that's it. I'm just concerned and I figured, you know, I'd call and see if you can help me figure out what's going on. Okay, that's fine. So when do you think it started? So probably it's been about two weeks. Okay. And any joint problems before that? You know, not really. I mean, I play a lot of sports and I had a, like I placed some ice hockey and I had this injury a few months ago. You know, I just like fell on the ice and, you know, had a huge bruise, but I think that's about it. Okay. So at the moment, just tell me about the exercise that you're doing normally. So I'm training. Well, I'm currently training for a marathon. It's going to happen in June. And so I'm trying to run like, I mean, right now I'm actually not even doing such long runs, maybe like seven or eight miles. And so I started about maybe a month ago. I'm like, you know, four or five miles, and I've just done like a couple of seven mile runs. And then, and then, you know, I go to the gym like two times a week and kind of do my usual routine. But yeah, I think the only thing that's really different has have been the runs, the longer runs. And have you had any times when the knee feels like it's giving way underneath you? Um, well, what do you mean by that? I'm not sure what what it means. So it means if you're if you're there and you just feel it sort of jolt, like give way feel unstable underneath you. Not not that. I mean, it just kind of starts hurting, you know. And does it hurt? How far into the run does it generally hurt? You know, I would say it probably starts like after maybe 20 minutes or so, which is probably, I don't know, like somewhere around mile three, maybe one and a half or three miles. Okay, oh, you're fast. I'm switching my kilometers in miles. I'm not sure. Sorry. And do you have to stop running or can you run through the pain? Yeah, that is a good question. So you know, the last few times, the last time actually stopped, I mean, I ran a little bit longer, but then I stopped because it was, I feel like it's getting worse. And when I started doing my abs, that you know, when I do my abs, it kind of required me to move my, you know, to kind of go from the flex position of my knees and straighten my legs. Then I hear all this clicking. Okay. And I think that's also freaked me out. And I just figured you know, something wrong. You said before it's both knees. So it's more, it's actually my right knee. It hurts. Any problems with your left one? No. Okay, can you just describe in the knee or show me where about the pain is happening, mainly? So, you know, I just want to say that I'm not sure if I'm so, you know, I feel it, it's kind of weird. I feel it in the middle, but I almost feel like maybe kind of`;
 
-Chief Complaint: Patient reports persistent dry cough and shortness of breath for 5 days.
-He mentions wheezing at night and mild fever of 100.2°F.
-
-Dr. Chen prescribed Albuterol inhaler and a 5-day course of Azithromycin 500mg.
-Follow-up scheduled for March 22, 2024 at 10:00 AM.`;
-
+      // Real PHI entities detected by Presidio on the above transcript
       const MOCK_PHI = [
-        { entity: "PERSON",        value: "Dr. Sarah Chen",        confidence: "0.97" },
-        { entity: "PERSON",        value: "John Mitchell",          confidence: "0.96" },
-        { entity: "DATE_TIME",     value: "March 14, 1978",         confidence: "0.98" },
-        { entity: "AGE",           value: "46-year-old",            confidence: "0.91" },
-        { entity: "LOCATION",      value: "1850 Sullivan Ave, Daly City, CA", confidence: "0.89" },
-        { entity: "PHONE_NUMBER",  value: "415-882-0317",           confidence: "0.99" },
-        { entity: "US_SSN",        value: "529-44-1821",            confidence: "0.99" },
-        { entity: "MEDICAL_LICENSE", value: "MRN-2024-9921",        confidence: "0.95" },
-        { entity: "DATE_TIME",     value: "March 22, 2024",         confidence: "0.97" },
+        { entity: "PERSON",    value: "Dr Smith",          confidence: "0.85" },
+        { entity: "LOCATION",  value: "Babylon",           confidence: "0.85" },
+        { entity: "PERSON",    value: "Mary Jones",        confidence: "0.85" },
+        { entity: "DATE_TIME", value: "January 1st, 1980", confidence: "0.85" },
+        { entity: "LOCATION",  value: "London",            confidence: "0.85" },
+        { entity: "DATE_TIME", value: "about two weeks",   confidence: "0.85" },
+        { entity: "DATE_TIME", value: "a few months ago",  confidence: "0.85" },
+        { entity: "DATE_TIME", value: "June",              confidence: "0.85" },
+        { entity: "DATE_TIME", value: "a month ago",       confidence: "0.85" },
+        { entity: "DATE_TIME", value: "20 minutes",        confidence: "0.85" },
       ];
 
-      const MOCK_REDACTED = `Dr. <PERSON> speaking with patient <PERSON>, date of birth <DATE_TIME>.
-Patient is a <AGE> male presenting at Valley Medical Center, <LOCATION>.
-Contact number on file is <PHONE_NUMBER>. SSN: <US_SSN>.
-Medical Record Number: <MEDICAL_LICENSE>.
-
-Chief Complaint: Patient reports persistent dry cough and shortness of breath for 5 days.
-He mentions wheezing at night and mild fever of 100.2°F.
-
-Dr. <PERSON> prescribed Albuterol inhaler and a 5-day course of Azithromycin 500mg.
-Follow-up scheduled for <DATE_TIME> at 10:00 AM.`;
-
-      const MOCK_SOAP = `SUBJECTIVE:
-Patient (<AGE> male) presents with a chief complaint of persistent dry cough and shortness of breath for 5 days. Patient reports associated wheezing at night and low-grade fever (100.2°F). No other significant symptoms reported.
-
-OBJECTIVE:
-- Temperature: 100.2°F (low-grade fever)
-- Respiratory: Wheezing noted. Shortness of breath reported.
-- No other objective findings documented.
-
-ASSESSMENT:
-Clinical presentation is consistent with an acute bronchospastic episode, likely bronchitis or early-stage respiratory tract infection. Differential includes atypical pneumonia.
-
-PLAN:
-1. Albuterol inhaler prescribed for bronchodilation and symptomatic relief.
-2. Azithromycin 500mg PO daily for 5 days (atypical pathogen coverage).
-3. Follow-up appointment scheduled in 7 days to assess treatment response.
-4. Patient instructed to return immediately if symptoms worsen or fever exceeds 101.5°F.`;
+      // Real redacted transcript produced by Presidio on the above transcript
+      const MOCK_REDACTED = `Hi. Hi there, it's <PERSON> from <LOCATION>. Hi. Can you confirm your name, date of birth and your home address please? Yes, my name is <PERSON>. My date of birth is <DATE_TIME> and my address is Sixties Lone Avenue, <LOCATION>. Okay, are you in a private place where you can have a consultation today? Absolutely. What can I do for you? So, a couple things, I think I may have overdone my workouts and now my knees are hurting and they're clicking a lot and it's starting to worry me. I can't run very far anymore without just feeling pain in my knees and then sometimes I also get this weird tingling in my toes. So yeah, that's it. I'm just concerned and I figured, you know, I'd call and see if you can help me figure out what's going on. Okay, that's fine. So when do you think it started? So probably it's been <DATE_TIME>. Okay. And any joint problems before that? You know, not really. I mean, I play a lot of sports and I had a, like I placed some ice hockey and I had this injury <DATE_TIME>. You know, I just like fell on the ice and, you know, had a huge bruise, but I think that's about it. Okay. So at the moment, just tell me about the exercise that you're doing normally. So I'm training. Well, I'm currently training for a marathon. It's going to happen in <DATE_TIME>. And so I'm trying to run like, I mean, right now I'm actually not even doing such long runs, maybe like seven or eight miles. And so I started about maybe <DATE_TIME>. I'm like, you know, four or five miles, and I've just done like a couple of seven mile runs. And then, and then, you know, I go to the gym like two times a week and kind of do my usual routine. But yeah, I think the only thing that's really different has have been the runs, the longer runs. And have you had any times when the knee feels like it's giving way underneath you? Um, well, what do you mean by that? I'm not sure what what it means. So it means if you're if you're there and you just feel it sort of jolt, like give way feel unstable underneath you. Not not that. I mean, it just kind of starts hurting, you know. And does it hurt? How far into the run does it generally hurt? You know, I would say it probably starts like after maybe <DATE_TIME> or so, which is probably, I don't know, like somewhere around mile three, maybe one and a half or three miles. Okay, oh, you're fast. I'm switching my kilometers in miles. I'm not sure. Sorry. And do you have to stop running or can you run through the pain? Yeah, that is a good question. So you know, the last few times, the last time actually stopped, I mean, I ran a little bit longer, but then I stopped because it was, I feel like it's getting worse. And when I started doing my abs, that you know, when I do my abs, it kind of required me to move my, you know, to kind of go from the flex position of my knees and straighten my legs. Then I hear all this clicking. Okay. And I think that's also freaked me out. And I just figured you know, something wrong. You said before it's both knees. So it's more, it's actually my right knee. It hurts. Any problems with your left one? No. Okay, can you just describe in the knee or show me where about the pain is happening, mainly? So, you know, I just want to say that I'm not sure if I'm so, you know, I feel it, it's kind of weird. I feel it in the middle, but I almost feel like maybe kind of`;
 
       const ENTITY_COLORS = {
         PERSON:           "#3F1D24",
@@ -383,30 +352,30 @@ PLAN:
 
         const includeSoap = el("includeSoap").checked;
         const textInBox = el("transcriptInput").value.trim();
+        const audioLoaded = state.audioFile !== null;
 
-        // Use full mock if the sample was loaded; use live detection if user typed something
-        const useMock = !textInBox || textInBox === SAMPLE_TRANSCRIPT.trim();
-
-        if (useMock) {
-          el("transcriptInput").value = SAMPLE_TRANSCRIPT.trim();
-          el("highlighted").innerHTML = colorize(SAMPLE_TRANSCRIPT, MOCK_PHI.map(p => {
+        if (audioLoaded || !textInBox) {
+          // Show real Whisper transcription result
+          el("transcriptInput").value = SAMPLE_TRANSCRIPT;
+          // Build PHI hit objects with positions
+          const hitsWithPos = MOCK_PHI.map(p => {
             const idx = SAMPLE_TRANSCRIPT.indexOf(p.value);
             return { ...p, start: idx, end: idx + p.value.length, score: parseFloat(p.confidence) };
-          }).filter(p => p.start >= 0));
+          }).filter(p => p.start >= 0);
+          el("highlighted").innerHTML = colorize(SAMPLE_TRANSCRIPT, hitsWithPos);
           el("redacted").textContent = MOCK_REDACTED;
           renderChips(MOCK_PHI);
-          if (includeSoap) el("soap").textContent = MOCK_SOAP;
+          if (includeSoap) el("soap").textContent = "SOAP note generation is available in the full local deployment using the self-hosted language model.";
+          el("status").textContent = `Transcription complete. ${MOCK_PHI.length} PHI entities identified and redacted.`;
         } else {
+          // User typed custom text — use live JS detection
           const hits = detectPhiInText(textInBox);
           el("highlighted").innerHTML = colorize(textInBox, hits);
           el("redacted").textContent = redactText(textInBox, hits);
           renderChips(hits);
-          if (includeSoap) el("soap").textContent = hits.length > 0
-            ? "SOAP note generation requires the self-hosted Ollama backend.\nIn the live deployment, this section fills automatically."
-            : "No PHI detected. Transcript appears clean.";
+          if (includeSoap) el("soap").textContent = "SOAP note generation is available in the full local deployment using the self-hosted language model.";
+          el("status").textContent = `${hits.length} PHI ${hits.length === 1 ? "entity" : "entities"} identified and redacted.`;
         }
-
-        el("status").textContent = `Pipeline complete. ${MOCK_PHI.length} PHI entities detected and redacted.`;
         btn.disabled = false;
         btn.textContent = "RUN PIPELINE";
 
@@ -434,9 +403,11 @@ PLAN:
           btn.textContent = "SAMPLE LOADED";
           btn.style.borderColor = "var(--accent-gold)";
           btn.style.color = "var(--accent-gold)";
+          // Clear the text box so user knows audio is the source
           el("transcriptInput").value = "";
-          el("transcriptInput").placeholder = "Sample audio loaded. Click RUN PIPELINE to process.";
-          el("status").textContent = "Sample audio loaded. Click RUN PIPELINE to process.";
+          el("transcriptInput").placeholder = "Audio loaded. Click RUN PIPELINE to transcribe and detect PHI.";
+          state.audioLoaded = true;
+          el("status").textContent = "Audio loaded. Click RUN PIPELINE to process.";
         } catch(e) {
           btn.textContent = "LOAD ERROR";
           el("status").textContent = "Could not load sample audio. Check your connection.";
