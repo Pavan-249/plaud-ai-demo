@@ -1,56 +1,65 @@
-# Plaud AI: PHI-Safe Clinical Pipeline Demo
+# Plaud AI: PHI-Safe Pipeline
 
-This repository contains a high-end, self-hosted demonstration of **Zero-Latency PII/PHI Redaction** and **Automated SOAP Note Generation** tailored for medical transcripts.
+A proof-of-concept that shows how a PHI-safe clinical pipeline could be built on top of Plaud recordings.
 
-Built to run entirely on-premise, this pipeline ensures that no sensitive Protected Health Information (PHI) ever leaves the local environment. It uses local spaCy/Presidio models for instant masking, and a local, self-hosted Large Language Model (Llama 3.2 via Ollama) to generate clinical summaries from the *safe, redacted* text.
+The core idea: medical consultation audio contains sensitive patient data. Before any AI model touches the transcript, all Protected Health Information must be detected and removed on-device.
 
-## Features
+## What This Does
 
-- **Luxury Dark Mode UI**: A highly polished, presentation-ready web interface with embedded tooltips.
-- **Zero-Latency Redaction**: Real-time PHI detection using `Microsoft Presidio` and `spaCy`, providing instant visual feedback as you type without waiting for LLM latency.
-- **Self-Hosted AI**: Utilizes `Ollama` running `llama3.2` locally to ensure complete data sovereignty and HIPAA compliance.
-- **Idempotent Deployment**: Fully containerized. A single command spins up the backend, frontend, and automatically pulls the required LLM weights.
+1. Transcribes audio using OpenAI Whisper running locally
+2. Detects PHI entities (names, dates, phone numbers, SSNs, medical IDs, locations) using Microsoft Presidio
+3. Redacts PHI inline, word-for-word, preserving the full transcript structure
+4. Generates a clinical SOAP note from the redacted transcript using a local LLM (Llama 3.2 via Ollama)
 
-## Technology Stack
+No patient data ever leaves the local network.
 
-- **Backend**: FastAPI, Uvicorn, Python 3.10
-- **NLP & Redaction**: `spacy` (`en_core_web_lg`), `presidio-analyzer`, `presidio-anonymizer`
-- **Transcription**: `openai-whisper` (CPU mode optimized for local execution)
-- **LLM**: `Ollama`
-- **Frontend**: Vanilla HTML/JS, CSS Glassmorphism & Flexbox UI
-- **Infrastructure**: Docker, Docker Compose
+## Stack
 
-## Getting Started
+| Layer | Technology |
+|---|---|
+| Transcription | OpenAI Whisper (CPU, local) |
+| PHI Detection | Microsoft Presidio + spaCy en_core_web_lg |
+| Redaction | Presidio Anonymizer |
+| SOAP Generation | Llama 3.2 via Ollama (self-hosted) |
+| Backend | FastAPI + Uvicorn |
+| Frontend | Vanilla HTML / CSS / JS |
+| Infrastructure | Docker + Docker Compose |
 
-### Prerequisites
-- [Docker](https://www.docker.com/) and [Docker Compose](https://docs.docker.com/compose/) installed on your machine.
+## Live Demo
 
-### Deployment (1-Click Run)
+Static demo (pre-computed sample): https://pavan-249.github.io/plaud-ai-demo/
 
-The entire application, including the local LLM, is orchestrated via Docker Compose.
+Note: the static demo shows pre-computed Whisper output for the bundled sample audio. Real-time transcription from arbitrary audio requires the local backend.
 
-1. Clone the repository and navigate into the directory:
-   ```bash
-   cd plaud_ai
-   ```
+## Run Locally
 
-2. Start the services:
-   ```bash
-   docker compose up --build
-   ```
+Requires Docker and Docker Compose.
 
-**What happens next?**
-- The `web` service builds the Python environment and starts the FastAPI server.
-- The `ollama` service starts the local LLM engine.
-- The `ollama-init` service automatically waits for the engine to boot and pulls the `llama3.2` model (this may take a few minutes on the first run depending on your internet connection).
+```bash
+git clone https://github.com/Pavan-249/plaud-ai-demo.git
+cd plaud-ai-demo
+docker compose up --build
+```
 
-3. Open your browser and navigate to:
-   **[http://localhost:8000](http://localhost:8000)**
+Then open http://localhost:8000.
 
-## Architecture Workflow
+On first run, the `ollama-init` container automatically pulls the `llama3.2` model. This takes a few minutes depending on your connection. Subsequent runs are instant.
 
-1. **Input**: User pastes a transcript or uploads an audio file (processed via Whisper).
-2. **Analysis**: The text is streamed to Presidio Analyzer which detects entities (PERSON, DATE, LOCATION, etc.).
-3. **Masking**: Presidio Anonymizer replaces identified entities with safe tags (e.g., `<PERSON>`).
-4. **Summarization**: The safe, redacted text is sent to the local Ollama container to generate a clinical SOAP note.
-5. **Output**: The frontend displays the live highlighted text, the redacted text, the detected entity chips, and the final SOAP note.
+## What Happens in the Pipeline
+
+1. User uploads audio or pastes a transcript
+2. Whisper transcribes the audio to text (runs locally)
+3. Presidio scans the transcript and flags PHI entities
+4. Each flagged entity is replaced inline with a tag like `<PERSON>` or `<DATE_TIME>`
+5. The redacted transcript is passed to Ollama for SOAP note generation
+6. The full transcript, redacted version, detected entities, and SOAP note are displayed
+
+## Limitations
+
+- Whisper transcription is CPU-only in this setup. A 4-minute audio clip takes roughly 60 to 90 seconds.
+- SOAP note generation requires Ollama to be running. Without it, the redaction output still works correctly.
+- The GitHub Pages static demo cannot transcribe arbitrary uploaded audio files. Use the Docker setup for full functionality.
+
+## Demo Notes
+
+The bundled sample audio is from the PriMock57 dataset, a publicly available collection of simulated clinical consultations.
