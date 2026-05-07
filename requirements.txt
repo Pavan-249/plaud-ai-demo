@@ -1,0 +1,8 @@
+gradio
+openai-whisper
+presidio-analyzer
+presidio-anonymizer
+spacy
+requests
+fastapi
+uvicorn

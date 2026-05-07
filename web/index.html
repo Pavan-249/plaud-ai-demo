@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Plaud AI Demo | Clinical Pipeline</title>
+    <!-- Elegant, luxury font choice -->
+    <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <!-- Parallax Background Layers -->
+    <div class="bg-layer bg1"></div>
+    <div class="bg-layer bg2"></div>
+    <div class="bg-layer bg3"></div>
+
+    <!-- Top Navigation Bar for a premium feel -->
+    <nav class="top-nav">
+      <div class="logo">PLAUD AI</div>
+      <div class="nav-links">
+        <a href="#">PII/PHI PIPELINE</a>
+      </div>
+    </nav>
+
+    <main class="shell">
+      <header class="hero">
+        <div class="hero-content">
+          <h1>CLINICAL DATA <br><span class="accent-text">SANITIZATION</span></h1>
+          <p class="subtitle">Real-time PII/PHI detection and automated SOAP note generation with uncompromising precision.</p>
+        </div>
+        <div class="hero-instructions" data-tooltip="Instructions:&#10;1. Type or paste a transcript to see instant PHI detection.&#10;2. Or upload an audio file.&#10;3. Click 'Run Pipeline' to generate a SOAP note using the safe, redacted transcript.">
+          <span class="info-icon">ℹ️</span> HOW TO USE
+        </div>
+      </header>
+
+      <div class="divider"></div>
+
+      <section class="controls fade-in">
+        <div class="controls-left">
+          <span class="mode-label">PROCESSING MODE:</span>
+          <div class="mode-toggle">
+            <button id="modeRealtime" class="mode active">REALTIME</button>
+            <button id="modeAccurate" class="mode">ACCURATE</button>
+          </div>
+        </div>
+        <div class="actions">
+          <!-- Added pulse-btn class and larger tooltip to draw user attention -->
+          <button id="loadSample" class="btn-outline pulse-btn" data-tooltip="✨ TRY IT OUT: Click here to load a sample medical audio recording containing PHI!">LOAD SAMPLE AUDIO</button>
+          <button id="loadTone" class="btn-outline">LOAD TEST TONE</button>
+        </div>
+      </section>
+
+      <section class="panel-grid fade-in">
+        
+        <!-- Left Column: Input -->
+        <div class="col-left">
+          <article class="panel">
+            <div class="panel-header">
+              <h3>TRANSCRIPT INPUT <span class="tooltip-icon" data-tooltip="Paste your medical transcript here. Live PHI detection happens instantly without LLM latency.">?</span></h3>
+              <p class="panel-desc">Paste your medical transcript below. Live detection is active.</p>
+            </div>
+            <textarea id="transcriptInput" placeholder="Enter clinical text here..."></textarea>
+            
+            <div class="audio-section">
+              <span class="audio-label">AUDIO SOURCE</span>
+              <div class="audio-row">
+                <input id="audioInput" class="file-input" type="file" accept="audio/*" />
+                <audio id="audioPreview" controls class="custom-audio"></audio>
+              </div>
+            </div>
+
+            <div class="pipeline-row">
+              <button id="runPipeline" class="btn-primary">RUN PIPELINE</button>
+              <label class="checkbox-label">
+                <input type="checkbox" id="includeSoap" checked /> 
+                <span class="checkbox-text">GENERATE SOAP SUMMARY</span>
+              </label>
+            </div>
+            <p id="status" class="status-text muted"></p>
+          </article>
+        </div>
+
+        <!-- Right Column: Outputs -->
+        <div class="col-right">
+          
+          <article class="panel output-panel">
+            <div class="panel-header">
+              <h3>LIVE PHI FLAGGING <span class="tooltip-icon" data-tooltip="Instantly highlights detected Protected Health Information using Presidio (local spaCy, zero latency).">?</span></h3>
+            </div>
+            <div id="highlighted" class="content-box highlight"></div>
+          </article>
+
+          <article class="panel output-panel">
+            <div class="panel-header">
+              <h3>REDACTED OUTPUT <span class="tooltip-icon" data-tooltip="The clean transcript safe for LLM processing or storage.">?</span></h3>
+            </div>
+            <pre id="redacted" class="content-box"></pre>
+          </article>
+
+          <article class="panel output-panel">
+            <div class="panel-header">
+              <h3>DETECTED ENTITIES <span class="tooltip-icon" data-tooltip="View of all identified PII/PHI entities and their confidence scores.">?</span></h3>
+            </div>
+            <div id="entityChips" class="chips-container">
+              <!-- Chips injected by JS -->
+            </div>
+          </article>
+
+          <article class="panel output-panel">
+            <div class="panel-header">
+              <h3>SOAP NOTE SUMMARY <span class="tooltip-icon" data-tooltip="Clinical summary generated by the self-hosted LLM using ONLY the redacted transcript.">?</span></h3>
+            </div>
+            <pre id="soap" class="content-box soap-box">Awaiting pipeline execution...</pre>
+          </article>
+
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>&copy; 2026 Plaud AI. Confidential Document Processing.</p>
+    </footer>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>

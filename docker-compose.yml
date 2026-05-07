@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    environment:
+      - OLLAMA_URL=http://ollama:11434/api/generate
+      - OLLAMA_MODEL=llama3.2:latest
+    depends_on:
+      - ollama
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+  ollama-init:
+    image: curlimages/curl:latest
+    depends_on:
+      - ollama
+    command: >
+      sh -c "
+        echo 'Waiting for Ollama to be ready...';
+        while ! curl -s http://ollama:11434/api/tags > /dev/null; do
+          sleep 2;
+        done;
+        echo 'Ollama is ready. Pulling llama3.2 model...';
+        curl -X POST http://ollama:11434/api/pull -d '{\"name\":\"llama3.2:latest\"}';
+        echo 'Model pulled successfully.';
+      "
+
+volumes:
+  ollama_data:
